@@ -13,7 +13,8 @@ import (
 func main(){
 	redisgoFlag := flag.Bool("redisgo",false,"Run redis-go demo")
 	goredisFlag := flag.Bool("goredis",false,"Run go-redis demo")
-	redisRest := flag.Bool("redisRest",false,"Start a server which interacts with Redis via a REST Api")
+	goredisRestFlag := flag.Bool("goredissrv",false,"Start a server which interacts with Redis via a REST Api using the goredis packages")
+	redisgoRestFlag := flag.Bool("redisgorsrv",false,"Start a server which interacts with Redis via a REST Api using the redisgo packages")
 
 	flag.Parse()
 
@@ -28,9 +29,12 @@ func main(){
 		goredis.Demo()
 	}
 
-	if *redisRest{
+	if *goredisRestFlag{
 		redisrest.InitializeServer()
+	}
 
+	if *redisgoRestFlag{
+		redisrest.InitializeServer()
 	}
 }
 
