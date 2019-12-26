@@ -50,16 +50,16 @@ func addDemoData(w http.ResponseWriter, r *http.Request){
 
 		json.Unmarshal(reqBody,&data)
 		
-		data.ID = getUuid()
+		data.ID = getUUID()
 		duration := getDuration(data.Exp)
 	
-		marshaledJsonData,err := json.Marshal(data)
+		marshaledJSONData,err := json.Marshal(data)
 		if err != nil {
 			fmt.Println(err)
 		}	
 
 		log.Println("Setting Redis Data")
-		err = goClient.Set(data.ID, marshaledJsonData, duration).Err()
+		err = goClient.Set(data.ID, marshaledJSONData, duration).Err()
 		if err !=nil{
 				log.Fatal(err)
 		}
@@ -150,7 +150,7 @@ func getGoClient() *redis.Client {
 } 
 
 //Gets a GUID/UUID
-func getUuid() string{
+func getUUID() string{
 	out, _ := exec.Command("uuidgen").Output()
 	return strings.TrimSuffix(string(out),"\n")
 }

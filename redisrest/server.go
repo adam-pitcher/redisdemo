@@ -13,6 +13,7 @@ func InitializeServer(){
 	router.HandleFunc("/addDemoData",addDemoData).Methods("POST")
 	router.HandleFunc("/getDemoKeys",getKeys).Methods("GET")
 	router.HandleFunc("/getDemoData/{id}",getDemoData).Methods("GET")
+	log.Println("Redis demo is now live and ready to process requests")
 	log.Fatal(http.ListenAndServe(":8080",router))
 }
 

@@ -18,8 +18,7 @@ func main(){
 
 	flag.Parse()
 
-	fmt.Println("Go is working")
-	log.Println("Log is working")	
+	
 
 	if *redisgoFlag{
 		redisgo.Demo()
@@ -30,11 +29,16 @@ func main(){
 	}
 
 	if *goredisRestFlag{
+		log.Println("Initializing Server")
 		redisrest.InitializeServer()
 	}
 
 	if *redisgoRestFlag{
 		redisrest.InitializeServer()
 	}
-}
 
+	fmt.Println("Please select a run option for the demo:")
+	fmt.Println("-redisgo to run an automated demo using redigo packages")
+	fmt.Println("-goredis to run an automated demo using goredis packages")
+	fmt.Println("-goredissrv to launch a REST API server which processes requests to Redis")
+}
