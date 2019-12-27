@@ -6,8 +6,7 @@ import (
 	"flag"
 	"github.com/redisdemo/redisgo"
 	"github.com/redisdemo/goredis"
-	"github.com/redisdemo/redisrest"
-	
+	"github.com/redisdemo/redisrest"	
 )
 
 func main(){
@@ -16,29 +15,21 @@ func main(){
 	goredisRestFlag := flag.Bool("goredissrv",false,"Start a server which interacts with Redis via a REST Api using the goredis packages")
 	redisgoRestFlag := flag.Bool("redisgorsrv",false,"Start a server which interacts with Redis via a REST Api using the redisgo packages")
 
-	flag.Parse()
-
-	
+	flag.Parse()	
 
 	if *redisgoFlag{
 		redisgo.Demo()
-	}
-
-	if *goredisFlag{
+	} else if *goredisFlag{
 		goredis.Demo()
-	}
-
-	if *goredisRestFlag{
+	} else if *goredisRestFlag{
 		log.Println("Initializing Server")
 		redisrest.InitializeServer()
-	}
-
-	if *redisgoRestFlag{
+	} else if *redisgoRestFlag{
 		redisrest.InitializeServer()
+	} else {
+		fmt.Println("Please select a run option for the demo:")
+		fmt.Println("-redisgo to run an automated demo using redigo packages")
+		fmt.Println("-goredis to run an automated demo using goredis packages")
+		fmt.Println("-goredissrv to launch a REST API server which processes requests to Redis")
 	}
-
-	fmt.Println("Please select a run option for the demo:")
-	fmt.Println("-redisgo to run an automated demo using redigo packages")
-	fmt.Println("-goredis to run an automated demo using goredis packages")
-	fmt.Println("-goredissrv to launch a REST API server which processes requests to Redis")
 }

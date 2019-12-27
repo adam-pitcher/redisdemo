@@ -30,16 +30,25 @@ func verifyConn(w http.ResponseWriter, r *http.Request){
 //Adds data to the demo redis database
 func addDemoData(w http.ResponseWriter, r *http.Request){
 	var data demoData	
-
+	var apikey = r.Header.Get("apikey")
+	var goClient *redis.Client	
+	log.Printf("API KEY = %s ",apikey)
+	if apikey == "TestKey1" {
 	//Get a client from the pool and establish a limiter
-	goClient := getGoClient()
+	log.Println("Setting client with limiter 10 in a second")
+		goClient = getGoClient(30, time.Second)
+	} else {
+		log.Println("Setting client with limiter 20 in a second")
+		goClient = getGoClient(10, time.Second)
+	}
 
 	//Get the limiter status for the provided key
-	limiterResult, err := limiter.Allow(r.Header.Get("apikey"))
+	limiterResult, err := limiter.Allow(apikey)
 	if err != nil {
 		panic(err)
 	}	
 	
+	log.Printf("Limit and remaining: %d",limiterResult.Remaining)
 	//If the request is within the limiter conditions, process the request
 	if limiterResult.Allowed {
 
@@ -75,7 +84,7 @@ func addDemoData(w http.ResponseWriter, r *http.Request){
 //Gets all keys currently stored in the redis database
 func getKeys(w http.ResponseWriter, r *http.Request){	
 
-	goClient := getGoClient()
+	goClient := getGoClient(10, time.Minute)
 	
 	//Get the limiter status for the provided key
 	limiterResult, err := limiter.Allow(r.Header.Get("apikey"))
@@ -100,7 +109,7 @@ func getKeys(w http.ResponseWriter, r *http.Request){
 
 //Gets data from the demo redis databased based on the provided key value
 func getDemoData(w http.ResponseWriter, r *http.Request){
-	goClient := getGoClient()
+	goClient := getGoClient(10, time.Minute)
 
 	//Get the limiter status for the provided key
 	limiterResult, err := limiter.Allow(r.Header.Get("apikey"))
@@ -115,7 +124,6 @@ func getDemoData(w http.ResponseWriter, r *http.Request){
 		if err != nil{
 			w.WriteHeader(http.StatusNoContent)
 			log.Printf("There was a problem retrieving data for id %s : %s",demoKey,err)
-			json.NewEncoder(w).Encode(result)
 		} 
 		w.WriteHeader(http.StatusOK)
 		encodeResult(w,result)
@@ -125,12 +133,58 @@ func getDemoData(w http.ResponseWriter, r *http.Request){
 	}	
 }
 
+func deleteDemoData(w http.ResponseWriter, r *http.Request){
+	goClient := getGoClient(10, time.Minute)
+
+	limiterResult, err := limiter.Allow(r.Header.Get("apikey"))
+	if err != nil {
+		panic(err)
+	}
+
+	if limiterResult.Allowed{
+		demoKey := mux.Vars(r)["id"]
+
+		err := goClient.Del(demoKey).Err()
+
+		if err != nil{
+			w.WriteHeader(http.StatusInternalServerError)
+			log.Printf("There was a problem deleting key %s : %s",demoKey,err)
+		}
+		w.WriteHeader(http.StatusOK)
+	} else {
+		w.WriteHeader(http.StatusTooManyRequests)
+		encodeResult(w,"Too many requests")
+	}	
+}
+
+func flushCurrentDB(w http.ResponseWriter, r *http.Request){
+	goClient := getGoClient(10, time.Minute)
+
+	limiterResult, err := limiter.Allow(r.Header.Get("apikey"))
+	if err != nil {
+		panic(err)
+	}
+
+	if limiterResult.Allowed{
+		err := goClient.FlushDB().Err()
+
+		if err != nil{
+			w.WriteHeader(http.StatusInternalServerError)
+			log.Println("There was a problem flushing the current db", err)
+		}
+		w.WriteHeader(http.StatusOK)
+	} else {
+		w.WriteHeader(http.StatusOK)
+		encodeResult(w,"Too many requests")
+	}
+}
+
 //sets up a go client and limiter
-func getGoClient() *redis.Client {
+func getGoClient(rate int, period time.Duration) *redis.Client {
 
 	log.Println("Getting new redis client")
 
-	poolTimeout,_ := time.ParseDuration("1m")
+	poolTimeout,_ := time.ParseDuration("10m")
 
 	goClient := redis.NewClient(&redis.Options{
 		Addr: "localhost:6379",
@@ -141,9 +195,9 @@ func getGoClient() *redis.Client {
 	})	
 
 	limiter = redis_rate.NewLimiter(goClient,&redis_rate.Limit{
-		Burst: 10,
-		Rate: 10,
-		Period: time.Minute,
+		Burst: rate,
+		Rate: rate,
+		Period: period,
 	})	
 
 	return goClient
